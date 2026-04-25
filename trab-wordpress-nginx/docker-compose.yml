@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   db:
-    image: mysql:5.7
+    image: mariadb:10.6
     restart: always
     environment:
       MYSQL_DATABASE: wordpress
@@ -11,12 +9,19 @@ services:
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   wordpress:
     image: wordpress:5.4.2-php7.2-apache
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy   # só sobe quando o banco estiver pronto
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: wordpress
